@@ -3,41 +3,44 @@ import { Header } from "@/components/Header";
 import { HeroBanner } from "@/components/HeroBanner";
 import { DramaRow } from "@/components/DramaRow";
 import { PageLoader } from "@/components/LoadingSpinner";
-import { getForYou, getTrending, getLatest, getVip, getDubIndo } from "@/services/dramaApi";
+import {
+  getForYou,
+  getTrending,
+  getLatest,
+  getDubIndo,
+  getRandom,
+} from "@/services/dramaApi";
 
 export default function Home() {
   const { data: forYouData, isLoading: forYouLoading } = useQuery({
     queryKey: ["forYou"],
-    queryFn: getForYou,
+    queryFn: () => getForYou(1),
   });
 
   const { data: trendingData, isLoading: trendingLoading } = useQuery({
     queryKey: ["trending"],
-    queryFn: getTrending,
+    queryFn: () => getTrending(1),
   });
 
   const { data: latestData, isLoading: latestLoading } = useQuery({
     queryKey: ["latest"],
-    queryFn: getLatest,
-  });
-
-  const { data: vipData, isLoading: vipLoading } = useQuery({
-    queryKey: ["vip"],
-    queryFn: getVip,
+    queryFn: () => getLatest(1),
   });
 
   const { data: dubIndoData } = useQuery({
     queryKey: ["dubindo"],
-    queryFn: getDubIndo,
+    queryFn: () => getDubIndo(1),
+  });
+
+  const { data: randomData } = useQuery({
+    queryKey: ["random"],
+    queryFn: () => getRandom(1),
   });
 
   const isLoading = forYouLoading && trendingLoading && latestLoading;
 
   // Get featured drama for hero
   const featuredDrama = trendingData?.[0] || forYouData?.[0] || null;
-
-  // Get VIP dramas from columns
-  const vipDramas = vipData?.columnVoList?.[0]?.bookList || [];
 
   if (isLoading) {
     return (
@@ -56,13 +59,14 @@ export default function Home() {
       <HeroBanner drama={featuredDrama} />
 
       {/* Content Rows */}
-      <div className="-mt-20 relative z-10 space-y-2 pb-12">
+      <div className="relative z-10 -mt-20 space-y-2 pb-12">
         {trendingData && trendingData.length > 0 && (
           <DramaRow
             title="🔥 Trending Sekarang"
             subtitle="Drama paling populer minggu ini"
             dramas={trendingData}
             size="large"
+            categoryLink="/category/trending"
           />
         )}
 
@@ -71,14 +75,7 @@ export default function Home() {
             title="✨ Untukmu"
             subtitle="Rekomendasi berdasarkan selera kamu"
             dramas={forYouData}
-          />
-        )}
-
-        {vipDramas.length > 0 && (
-          <DramaRow
-            title="👑 VIP Eksklusif"
-            subtitle="Konten premium untuk member VIP"
-            dramas={vipDramas}
+            categoryLink="/category/foryou"
           />
         )}
 
@@ -87,6 +84,7 @@ export default function Home() {
             title="🆕 Baru Ditambahkan"
             subtitle="Drama terbaru yang bisa kamu tonton"
             dramas={latestData}
+            categoryLink="/category/latest"
           />
         )}
 
@@ -95,14 +93,16 @@ export default function Home() {
             title="🇮🇩 Dubbing Indonesia"
             subtitle="Drama dengan dubbing Bahasa Indonesia"
             dramas={dubIndoData}
+            categoryLink="/category/dubindo"
           />
         )}
 
-        {/* Second VIP Column if available */}
-        {vipData?.columnVoList?.[1]?.bookList && (
+        {randomData && randomData.length > 0 && (
           <DramaRow
-            title={vipData.columnVoList[1].title || "Pilihan Spesial"}
-            dramas={vipData.columnVoList[1].bookList}
+            title="🎲 Pilihan Acak"
+            subtitle="Drama random untuk kamu explore"
+            dramas={randomData}
+            categoryLink="/category/random"
           />
         )}
       </div>

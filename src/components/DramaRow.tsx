@@ -2,23 +2,24 @@ import { Drama } from "@/services/dramaApi";
 import { DramaCard } from "./DramaCard";
 import { ChevronRight } from "lucide-react";
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 
 interface DramaRowProps {
   title: string;
   subtitle?: string;
   dramas: Drama[];
   size?: "small" | "medium" | "large";
+  categoryLink?: string;
 }
 
-export function DramaRow({ title, subtitle, dramas, size = "medium" }: DramaRowProps) {
+export function DramaRow({
+  title,
+  subtitle,
+  dramas,
+  size = "medium",
+  categoryLink,
+}: DramaRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -400 : 400;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
 
   if (!dramas || dramas.length === 0) return null;
 
@@ -36,17 +37,22 @@ export function DramaRow({ title, subtitle, dramas, size = "medium" }: DramaRowP
             </p>
           )}
         </div>
-        <button className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-primary/80 sm:text-sm">
-          Lihat Semua
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        {categoryLink && (
+          <Link
+            to={categoryLink}
+            className="flex items-center gap-1 text-xs text-primary transition-colors hover:text-primary/80 sm:text-sm"
+          >
+            Lihat Semua
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
       </div>
 
       {/* Scrollable Row */}
-      <div className="relative group">
+      <div className="group relative">
         {/* Left Gradient */}
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-gradient-to-r from-background to-transparent sm:w-12" />
-        
+
         {/* Right Gradient */}
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-background to-transparent sm:w-12" />
 

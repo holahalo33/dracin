@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Lock,
   Play,
   List,
   Info,
@@ -39,29 +38,40 @@ interface Episode {
   chapterImg?: string;
 }
 
-// Helper to get best video URL from episode
-function getVideoUrl(episode: Episode | undefined): string {
+// Helper to get video URL for a specific quality
+function getVideoUrl(episode: Episode | undefined, quality: number): string {
   if (!episode?.cdnList?.length) return "";
-  
+
   // Find the default CDN or use first one
-  const cdn = episode.cdnList.find(c => c.isDefault === 1) || episode.cdnList[0];
+  const cdn =
+    episode.cdnList.find((c) => c.isDefault === 1) || episode.cdnList[0];
   if (!cdn?.videoPathList?.length) return "";
-  
-  // Find the default quality or use 720p or first available
-  const videoPath = 
-    cdn.videoPathList.find(v => v.isDefault === 1) ||
-    cdn.videoPathList.find(v => v.quality === 720) ||
+
+  // Find the requested quality, or fallback to default/first available
+  const videoPath =
+    cdn.videoPathList.find((v) => v.quality === quality) ||
+    cdn.videoPathList.find((v) => v.isDefault === 1) ||
     cdn.videoPathList[0];
-  
+
   return videoPath?.videoPath || "";
+}
+
+// Helper to get all available qualities
+function getAvailableQualities(episode: Episode | undefined): VideoPath[] {
+  if (!episode?.cdnList?.length) return [];
+
+  const cdn =
+    episode.cdnList.find((c) => c.isDefault === 1) || episode.cdnList[0];
+  return cdn?.videoPathList || [];
 }
 
 export default function Watch() {
   const { bookId } = useParams<{ bookId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const episodeParam = searchParams.get("ep");
-  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0);
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState<number | null>(null);
   const [showEpisodeList, setShowEpisodeList] = useState(false);
+  const [currentQuality, setCurrentQuality] = useState(720);
 
   const { data: drama, isLoading: dramaLoading } = useQuery({
     queryKey: ["drama", bookId],
@@ -77,45 +87,67 @@ export default function Watch() {
 
   const episodes: Episode[] = episodesData || [];
 
-  // Set initial episode from URL param
+  // Initialize episode index from URL param ONLY ONCE when episodes load
   useEffect(() => {
-    if (episodeParam && episodes.length > 0) {
-      const index = parseInt(episodeParam, 10) - 1;
-      if (index >= 0 && index < episodes.length) {
-        setCurrentEpisodeIndex(index);
+    if (episodes.length > 0 && currentEpisodeIndex === null) {
+      if (episodeParam) {
+        const index = parseInt(episodeParam, 10) - 1;
+        if (index >= 0 && index < episodes.length) {
+          setCurrentEpisodeIndex(index);
+        } else {
+          setCurrentEpisodeIndex(0);
+        }
+      } else {
+        setCurrentEpisodeIndex(0);
       }
     }
-  }, [episodeParam, episodes.length]);
+  }, [episodes.length, episodeParam, currentEpisodeIndex]);
 
-  // Update URL when episode changes
-  useEffect(() => {
-    if (episodes.length > 0) {
-      setSearchParams({ ep: String(currentEpisodeIndex + 1) });
-    }
-  }, [currentEpisodeIndex, episodes.length, setSearchParams]);
+  // Actual episode index to use (default to 0 if null)
+  const activeEpisodeIndex = currentEpisodeIndex ?? 0;
 
-  const currentEpisode = episodes[currentEpisodeIndex];
-  const hasPrevious = currentEpisodeIndex > 0;
-  const hasNext = currentEpisodeIndex < episodes.length - 1;
+  const currentEpisode = episodes[activeEpisodeIndex];
+  const hasPrevious = activeEpisodeIndex > 0;
+  const hasNext = activeEpisodeIndex < episodes.length - 1;
 
   const goToPrevious = () => {
     if (hasPrevious) {
-      setCurrentEpisodeIndex(currentEpisodeIndex - 1);
+      const newIndex = activeEpisodeIndex - 1;
+      setCurrentEpisodeIndex(newIndex);
+      setSearchParams({ ep: String(newIndex + 1) }, { replace: true });
     }
   };
 
   const goToNext = () => {
     if (hasNext) {
-      setCurrentEpisodeIndex(currentEpisodeIndex + 1);
+      const newIndex = activeEpisodeIndex + 1;
+      setCurrentEpisodeIndex(newIndex);
+      setSearchParams({ ep: String(newIndex + 1) }, { replace: true });
     }
   };
 
   const selectEpisode = (index: number) => {
     setCurrentEpisodeIndex(index);
+    setSearchParams({ ep: String(index + 1) }, { replace: true });
     setShowEpisodeList(false);
   };
 
   const isLoading = dramaLoading || episodesLoading;
+
+  // Get video URL for current episode and quality
+  const currentVideoUrl = useMemo(() => {
+    return getVideoUrl(currentEpisode, currentQuality);
+  }, [currentEpisode, currentQuality]);
+
+  // Get available qualities
+  const qualityOptions = useMemo(() => {
+    return getAvailableQualities(currentEpisode);
+  }, [currentEpisode]);
+
+  // Demo fallback if no video URL
+  const videoSrc =
+    currentVideoUrl ||
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
   if (isLoading) {
     return (
@@ -145,14 +177,6 @@ export default function Watch() {
     );
   }
 
-  // Get video URL for current episode
-  const currentVideoUrl = useMemo(() => {
-    return getVideoUrl(currentEpisode);
-  }, [currentEpisode]);
-
-  // Demo fallback if no video URL
-  const videoSrc = currentVideoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -165,12 +189,14 @@ export default function Watch() {
               src={videoSrc}
               poster={currentEpisode?.chapterImg || drama.coverWap}
               title={currentEpisode?.chapterName || drama.bookName}
-              episodeNumber={currentEpisodeIndex + 1}
+              episodeNumber={activeEpisodeIndex + 1}
               onPrevious={goToPrevious}
               onNext={goToNext}
               hasPrevious={hasPrevious}
               hasNext={hasNext}
               autoPlay
+              qualityOptions={qualityOptions}
+              onQualityChange={setCurrentQuality}
             />
           </div>
         </div>
@@ -191,7 +217,7 @@ export default function Watch() {
               </Button>
               <div className="text-center">
                 <p className="text-sm font-medium">
-                  Episode {currentEpisodeIndex + 1} / {episodes.length}
+                  Episode {activeEpisodeIndex + 1} / {episodes.length}
                 </p>
                 <p className="line-clamp-1 text-xs text-muted-foreground">
                   {currentEpisode?.chapterName}
@@ -247,7 +273,11 @@ export default function Watch() {
                   {drama.tags && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {drama.tags.slice(0, 4).map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {tag}
                         </Badge>
                       ))}
@@ -269,12 +299,11 @@ export default function Watch() {
                     <button
                       key={episode.chapterId || index}
                       onClick={() => selectEpisode(index)}
-                      disabled={episode.isCharge === 1}
                       className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors ${
-                        index === currentEpisodeIndex
+                        index === activeEpisodeIndex
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted"
-                      } ${episode.isCharge === 1 ? "cursor-not-allowed opacity-50" : ""}`}
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
@@ -284,11 +313,9 @@ export default function Watch() {
                           {episode.chapterName || `Episode ${index + 1}`}
                         </span>
                       </div>
-                      {episode.isCharge === 1 ? (
-                        <Lock className="h-4 w-4 text-muted-foreground" />
-                      ) : index === currentEpisodeIndex ? (
+                      {index === activeEpisodeIndex && (
                         <Play className="h-4 w-4 fill-current" />
-                      ) : null}
+                      )}
                     </button>
                   ))}
                 </div>
@@ -321,12 +348,11 @@ export default function Watch() {
                     <button
                       key={episode.chapterId || index}
                       onClick={() => selectEpisode(index)}
-                      disabled={episode.isCharge === 1}
                       className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors ${
-                        index === currentEpisodeIndex
+                        index === activeEpisodeIndex
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted"
-                      } ${episode.isCharge === 1 ? "cursor-not-allowed opacity-50" : ""}`}
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
@@ -336,11 +362,9 @@ export default function Watch() {
                           {episode.chapterName || `Episode ${index + 1}`}
                         </span>
                       </div>
-                      {episode.isCharge === 1 ? (
-                        <Lock className="h-4 w-4" />
-                      ) : index === currentEpisodeIndex ? (
+                      {index === activeEpisodeIndex && (
                         <Play className="h-4 w-4 fill-current" />
-                      ) : null}
+                      )}
                     </button>
                   ))}
                 </div>

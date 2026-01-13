@@ -3,10 +3,13 @@ const BASE_URL = "https://dramabox.sansekai.my.id/api/dramabox";
 export interface Drama {
   bookId: string;
   bookName: string;
-  coverWap: string;
+  coverWap?: string;
+  cover?: string; // Search API uses 'cover' instead of 'coverWap'
+  bookCover?: string; // Random API uses 'bookCover'
   chapterCount?: number;
   introduction?: string;
   tags?: string[];
+  tagNames?: string[]; // Search API uses 'tagNames' instead of 'tags'
   tagV3s?: Array<{
     tagId: number;
     tagName: string;
@@ -19,6 +22,11 @@ export interface Drama {
   };
   playCount?: string;
   inLibrary?: boolean;
+  rankVo?: {
+    rankType: number;
+    hotCode: string;
+    sort: number;
+  };
 }
 
 export interface ColumnData {
@@ -62,18 +70,18 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
-export async function getForYou(): Promise<Drama[]> {
-  const data = await fetchApi<any>("/foryou");
+export async function getForYou(page: number = 1): Promise<Drama[]> {
+  const data = await fetchApi<any>(`/foryou?page=${page}`);
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 
-export async function getTrending(): Promise<Drama[]> {
-  const data = await fetchApi<any>("/trending");
+export async function getTrending(page: number = 1): Promise<Drama[]> {
+  const data = await fetchApi<any>(`/trending?page=${page}`);
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 
-export async function getLatest(): Promise<Drama[]> {
-  const data = await fetchApi<any>("/latest");
+export async function getLatest(page: number = 1): Promise<Drama[]> {
+  const data = await fetchApi<any>(`/latest?page=${page}`);
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 
@@ -81,8 +89,8 @@ export async function getVip(): Promise<VipResponse> {
   return fetchApi<VipResponse>("/vip");
 }
 
-export async function getRandom(): Promise<Drama[]> {
-  const data = await fetchApi<any>("/randomdrama");
+export async function getRandom(page: number = 1): Promise<Drama[]> {
+  const data = await fetchApi<any>(`/randomdrama?page=${page}`);
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 
@@ -101,8 +109,8 @@ export async function getAllEpisodes(bookId: string): Promise<any[]> {
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 
-export async function getDubIndo(): Promise<Drama[]> {
-  const data = await fetchApi<any>("/dubindo");
+export async function getDubIndo(page: number = 1): Promise<Drama[]> {
+  const data = await fetchApi<any>(`/dubindo?page=${page}`);
   return Array.isArray(data) ? data : data?.data || data?.result || [];
 }
 

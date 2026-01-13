@@ -8,6 +8,9 @@ import DramaDetail from "./pages/DramaDetail";
 import Watch from "./pages/Watch";
 import Search from "./pages/Search";
 import Category from "./pages/Category";
+import Categories from "./pages/Categories";
+import AllTags from "./pages/AllTags";
+import TagDetail from "./pages/TagDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -27,6 +30,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/tags" element={<AllTags />} />
+          <Route path="/tag/:tagName" element={<TagDetail />} />
           <Route path="/drama/:bookId" element={<DramaDetail />} />
           <Route path="/watch/:bookId" element={<Watch />} />
           <Route path="/search" element={<Search />} />

@@ -1,4 +1,4 @@
-import { Search, Menu, X, Crown } from "lucide-react";
+import { Search, Menu, X, Film } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,9 @@ export function Header() {
 
   const navLinks = [
     { label: "Beranda", href: "/" },
+    { label: "Kategori", href: "/categories" },
     { label: "Trending", href: "/category/trending" },
     { label: "Terbaru", href: "/category/latest" },
-    { label: "VIP", href: "/category/vip" },
   ];
 
   return (
@@ -32,7 +32,7 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Crown className="h-5 w-5 text-primary-foreground" />
+            <Film className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="text-lg font-bold text-foreground sm:text-xl">
             Drama<span className="text-primary">Box</span>
@@ -86,12 +86,6 @@ export function Header() {
             </Button>
           )}
 
-          {/* VIP Button */}
-          <Button variant="vip" size="sm" className="hidden sm:flex">
-            <Crown className="mr-1 h-3.5 w-3.5" />
-            VIP
-          </Button>
-
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -122,10 +116,6 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <Button variant="vip" size="sm" className="mt-4">
-              <Crown className="mr-1 h-3.5 w-3.5" />
-              Langganan VIP
-            </Button>
           </nav>
         </div>
       )}

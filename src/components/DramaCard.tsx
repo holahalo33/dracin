@@ -8,6 +8,11 @@ interface DramaCardProps {
 }
 
 export function DramaCard({ drama, size = "medium" }: DramaCardProps) {
+  // Handle coverWap, cover (search API), and bookCover (random API)
+  const coverImage = drama.coverWap || drama.cover || drama.bookCover || "";
+  // Handle both tags and tagNames (search API uses 'tagNames')
+  const dramaTags = drama.tags || drama.tagNames || [];
+
   const sizeClasses = {
     small: "w-28 sm:w-32",
     medium: "w-36 sm:w-44",
@@ -30,7 +35,7 @@ export function DramaCard({ drama, size = "medium" }: DramaCardProps) {
       >
         {/* Cover Image */}
         <img
-          src={drama.coverWap}
+          src={coverImage}
           alt={drama.bookName}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
@@ -38,16 +43,6 @@ export function DramaCard({ drama, size = "medium" }: DramaCardProps) {
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80" />
-
-        {/* VIP Badge */}
-        {drama.corner && (
-          <div
-            className="absolute left-0 top-2 rounded-r-full px-2 py-0.5 text-[10px] font-bold text-white"
-            style={{ backgroundColor: drama.corner.color }}
-          >
-            {drama.corner.name}
-          </div>
-        )}
 
         {/* Play Button */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
@@ -78,9 +73,9 @@ export function DramaCard({ drama, size = "medium" }: DramaCardProps) {
       </h3>
 
       {/* Tags */}
-      {drama.tags && drama.tags.length > 0 && (
+      {dramaTags.length > 0 && (
         <div className="mt-1 flex flex-wrap gap-1">
-          {drama.tags.slice(0, 2).map((tag, index) => (
+          {dramaTags.slice(0, 2).map((tag, index) => (
             <span
               key={index}
               className="rounded bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground"

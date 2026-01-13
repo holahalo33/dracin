@@ -13,12 +13,13 @@ import {
   Clock,
   Film,
   Star,
-  Lock,
   ChevronRight,
 } from "lucide-react";
+import { useState } from "react";
 
 export default function DramaDetail() {
   const { bookId } = useParams<{ bookId: string }>();
+  const [showAllEpisodes, setShowAllEpisodes] = useState(false);
 
   const { data: drama, isLoading } = useQuery({
     queryKey: ["drama", bookId],
@@ -60,6 +61,10 @@ export default function DramaDetail() {
     );
   }
 
+  const displayedEpisodes = showAllEpisodes
+    ? episodes
+    : episodes?.slice(0, 12);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -95,14 +100,6 @@ export default function DramaDetail() {
                   alt={drama.bookName}
                   className="h-full w-full object-cover"
                 />
-                {drama.corner && (
-                  <div
-                    className="absolute left-0 top-3 rounded-r-full px-3 py-1 text-xs font-bold text-white"
-                    style={{ backgroundColor: drama.corner.color }}
-                  >
-                    {drama.corner.name}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -177,17 +174,18 @@ export default function DramaDetail() {
 
         {episodes && episodes.length > 0 ? (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {episodes.slice(0, 12).map((episode: any, index: number) => (
-              <button
+            {displayedEpisodes?.map((episode: any, index: number) => (
+              <Link
                 key={episode.chapterId || index}
+                to={`/watch/${bookId}?ep=${index + 1}`}
                 className="group flex items-center justify-between rounded-lg bg-card p-4 text-left transition-colors hover:bg-accent"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                     {index + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground line-clamp-1">
+                    <p className="line-clamp-1 text-sm font-medium text-foreground">
                       {episode.chapterName || `Episode ${index + 1}`}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -196,12 +194,8 @@ export default function DramaDetail() {
                     </div>
                   </div>
                 </div>
-                {episode.isLock ? (
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                )}
-              </button>
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </Link>
             ))}
           </div>
         ) : (
@@ -213,8 +207,12 @@ export default function DramaDetail() {
           </div>
         )}
 
-        {episodes && episodes.length > 12 && (
-          <Button variant="outline" className="mt-4 w-full">
+        {episodes && episodes.length > 12 && !showAllEpisodes && (
+          <Button
+            variant="outline"
+            className="mt-4 w-full"
+            onClick={() => setShowAllEpisodes(true)}
+          >
             Lihat Semua {episodes.length} Episode
           </Button>
         )}
